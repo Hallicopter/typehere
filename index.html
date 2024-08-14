@@ -64,49 +64,64 @@
             const typingCanvas = document.getElementById('typingCanvas');
             const tabContainer = document.getElementById('tabContainer');
             const newTabBtn = document.getElementById('newTabBtn');
-            let currentTab = 0;
-            let tabs = JSON.parse(localStorage.getItem('tabs')) || [{ id: 0, content: '' }];
+            let currentTabId = null;
 
             function createTab(id) {
                 const tab = document.createElement('button');
                 tab.classList.add('tab');
-                tab.textContent = `Tab ${id + 1}`;
+                tab.textContent = `Tab ${id}`;
                 tab.dataset.id = id;
                 tab.addEventListener('click', () => switchTab(id));
                 tabContainer.insertBefore(tab, newTabBtn);
             }
 
             function switchTab(id) {
-                saveCurrentTab();
-                currentTab = id;
-                typingCanvas.value = tabs.find(tab => tab.id === id).content;
+                if (currentTabId !== null) {
+                    saveTabContent(currentTabId, typingCanvas.value);
+                }
+                currentTabId = id;
+                typingCanvas.value = localStorage.getItem(`tab_${id}`) || '';
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 document.querySelector(`.tab[data-id="${id}"]`).classList.add('active');
             }
 
-            function saveCurrentTab() {
-                const tabToUpdate = tabs.find(tab => tab.id === currentTab);
-                if (tabToUpdate) {
-                    tabToUpdate.content = typingCanvas.value;
-                    localStorage.setItem('tabs', JSON.stringify(tabs));
-                }
+            function saveTabContent(id, content) {
+                localStorage.setItem(`tab_${id}`, content);
+            }
+
+            function getNextTabId() {
+                const existingIds = Object.keys(localStorage)
+                    .filter(key => key.startsWith('tab_'))
+                    .map(key => parseInt(key.split('_')[1]));
+                return existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
             }
 
             newTabBtn.addEventListener('click', () => {
-                saveCurrentTab();
-                const newId = Math.max(...tabs.map(tab => tab.id), 0) + 1;
-                tabs.push({ id: newId, content: '' });
+                const newId = getNextTabId();
                 createTab(newId);
                 switchTab(newId);
             });
 
             typingCanvas.addEventListener('input', () => {
-                saveCurrentTab();
+                if (currentTabId !== null) {
+                    saveTabContent(currentTabId, typingCanvas.value);
+                }
             });
 
             // Initialize tabs
-            tabs.forEach(tab => createTab(tab.id));
-            switchTab(tabs[0].id);
+            const existingTabs = Object.keys(localStorage)
+                .filter(key => key.startsWith('tab_'))
+                .map(key => parseInt(key.split('_')[1]))
+                .sort((a, b) => a - b);
+
+            if (existingTabs.length === 0) {
+                const firstTabId = 1;
+                createTab(firstTabId);
+                switchTab(firstTabId);
+            } else {
+                existingTabs.forEach(id => createTab(id));
+                switchTab(existingTabs[0]);
+            }
         });
     </script>
 </body>
