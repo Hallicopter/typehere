@@ -1,12 +1,108 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>typehere</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typehere.cc - Multi-tab</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .tabs {
+            display: flex;
+            background-color: #f1f1f1;
+            border-bottom: 1px solid #ccc;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+        }
+        .tab.active {
+            background-color: #fff;
+            border-bottom: 2px solid #000;
+        }
+        #typingCanvas {
+            flex-grow: 1;
+            width: 100%;
+            border: none;
+            padding: 20px;
+            font-size: 16px;
+            resize: none;
+            box-sizing: border-box;
+        }
+        #newTabBtn {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+    </style>
 </head>
 <body>
-    <textarea id="typingCanvas" autofocus></textarea>
-    <script src="script.js"></script>
+    <div class="container">
+        <div class="tabs" id="tabContainer">
+            <button id="newTabBtn">+</button>
+        </div>
+        <textarea id="typingCanvas" placeholder="Start typing here..."></textarea>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const typingCanvas = document.getElementById('typingCanvas');
+            const tabContainer = document.getElementById('tabContainer');
+            const newTabBtn = document.getElementById('newTabBtn');
+            let currentTab = 0;
+            let tabs = JSON.parse(localStorage.getItem('tabs')) || [{ id: 0, content: '' }];
+
+            function createTab(id) {
+                const tab = document.createElement('button');
+                tab.classList.add('tab');
+                tab.textContent = `Tab ${id + 1}`;
+                tab.dataset.id = id;
+                tab.addEventListener('click', () => switchTab(id));
+                tabContainer.insertBefore(tab, newTabBtn);
+            }
+
+            function switchTab(id) {
+                saveCurrentTab();
+                currentTab = id;
+                typingCanvas.value = tabs[id].content;
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelector(`.tab[data-id="${id}"]`).classList.add('active');
+            }
+
+            function saveCurrentTab() {
+                tabs[currentTab].content = typingCanvas.value;
+                localStorage.setItem('tabs', JSON.stringify(tabs));
+            }
+
+            newTabBtn.addEventListener('click', () => {
+                saveCurrentTab();
+                const newId = tabs.length;
+                tabs.push({ id: newId, content: '' });
+                createTab(newId);
+                switchTab(newId);
+            });
+
+            typingCanvas.addEventListener('input', saveCurrentTab);
+
+            // Initialize tabs
+            tabs.forEach(tab => createTab(tab.id));
+            switchTab(0);
+        });
+    </script>
 </body>
 </html>
-
